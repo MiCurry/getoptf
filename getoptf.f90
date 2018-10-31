@@ -32,10 +32,11 @@ module getoptf_m
         integer :: parse_format
     end function parse_format
 
-
     function getoptf(argc, argv, c, format)
+        !
+        !Example call to get opt: do while ( getopt(argc, argv, c, " ") /= -1 )
+        !
 
-    !do while ( getopt(argc, argv, c, " ") /= -1 )
         implicit none
     
         ! Input arguments
