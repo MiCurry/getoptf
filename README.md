@@ -35,7 +35,7 @@ arguments specifed by the programmer
     then report an error
     * if the argument is good returns its value(s) to the programmer.
 
-# Notes
+# Notes & Resources
 
 Fortran poses a different challange then C as it does not contain an argv 
 variable that holds the entire command line arguments.
@@ -46,3 +46,11 @@ so we will have to use this to help us to parse through the command arguments.
 
 THATS WRONG! It does via get_command! woohoo!
 
+
+## Resources
+* https://www.gnu.org/software/libc/manual/html_node/Getopt.html
+* https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND_005fARGUMENT.html#GET_005fCOMMAND_005fARGUMENT
+* https://gcc.gnu.org/onlinedocs/gfortran/EXECUTE_005fCOMMAND_005fLINE.html#EXECUTE_005fCOMMAND_005fLINE
+* https://software.intel.com/en-us/fortran-compiler-developer-guide-and-reference-execute-command-line
+* https://gcc.gnu.org/onlinedocs/gfortran/COMMAND_005fARGUMENT_005fCOUNT.html#COMMAND_005fARGUMENT_005fCOUNT
+* https://gcc.gnu.org/onlinedocs/gfortran/GET_005fCOMMAND.html#GET_005fCOMMAND
