@@ -8,7 +8,6 @@ A Fortran implementation of getopt.
 2. Unit Tests!
 3. Write code!
 
-
 ## Usage
 ```
 do while (getopt(argc, argv, c, "v:tf:c ") /= -1 )
@@ -87,6 +86,24 @@ the argument list) use the getoptf - `get_arg_count()` command.
     * Or error messages can be suppressed by placing a `:` at the front of
 * Can process multiple arguments:
     * `./a.out -f file1 -f file2 -f file3`
+
+
+# Testing Framework
+
+Ideas On Framework - Python? Makefile? By hand?
+* Use a Python program to pass commands to Fortran programs and check returned
+  results
+* Have a Makefile rule to run tests - Can't check results easily.. Only by
+viewing
+* Run checks by hand - gross!
+* Have a Fortran program tests programs - Probably not that easy since running
+  command line programs from Fortran isn't very easy, or portable.
+
+What are we actually checking?
+* Have the program print out its values, and have Python check them that way
+* So when we pass getopt an option, after its process it will return, and
+we'll print out the variables, (`c`, `optopt`, `opterr`, `optarg`, `optint`
+etc) to the screen to be tested.
 
 # Design
 
