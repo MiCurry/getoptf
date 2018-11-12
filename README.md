@@ -8,7 +8,6 @@ A Fortran implementation of getopt.
 2. Unit Tests!
 3. Write code!
 
-# Requirements 
 
 ## Usage
 ```
@@ -49,7 +48,7 @@ by using the `COMMAND_ARGUMENT_COUNT()` intrinsic function. If the argument
 list is not supplied by the user (ie The programmer is specifying and creating
 the argument list) use the getoptf - `get_arg_count()` command.
 
-
+# Requirements 
 * Retain most of the functionality as normal c getopt (see man 3 getopt)
 * Options can be all alphanumeric characters ie. [a-zA-Z0-9]
     * Most special characters allowed
