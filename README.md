@@ -10,7 +10,25 @@ A Fortran implementation of getopt.
 
 ## Usage
 ```
-do while (getopt(argc, argv, c, "v:tf:c ") /= -1 )
+do while(getopt(argc, argv, c ":f:v:12") /= -1) 
+    select case (c)
+        case ('f'):
+            call appendFile(fileList, optarg)
+        case ('v'):
+            VERBOSE_FLAG = int(optarg)
+        case ('1'):
+            FLAG_1 = .TRUE.
+        case ('2'):
+            FLAG_2 = .TRUE.
+        case (':'):
+            write(0, *) "ERROR: Missing argument for opt ", optopt
+            call usage()
+            stop
+        case ('?'):
+            write(0, *) "ERROR: Unrecognized option!"
+            call usage()
+            stop
+end do
 ```
 
 ## Example Usages
@@ -18,27 +36,20 @@ do while (getopt(argc, argv, c, "v:tf:c ") /= -1 )
 $ # All of the commands are equivilant
 $ grep -l -i -f patterns *.c
 $ grep -lif patterns *.c
-* grep -lifpatterns *c
-```
-```
--v
--f argument
--f=argument
--vf=argument
+$ grep -lifpatterns *c
+$./a.out -v
+$./a.out -f argument
+$./a.out -f=argument
+$./a.out -vf=argument
 ```
 
 ### Definitions
 * Optstring - The string provided by the programmer that specifies the available
   options.
 * Argument list (argv) - Can be any list of command line options, not just
-  argv. But the list must be a string (character array) and options must be
-  specified as one of the following:
-    * `-v`
-    * `-f argument`
-    * `-f=argument`
-    * `-vf=argument`
-
-   Here is an example of a valid character list:
+  argv. But the list must be a string (character array). See the usage section
+  above for examples.
+* Here is an example of a valid character list:
    ```
     ./readfile -vi input_file -o=output_file
    ```
