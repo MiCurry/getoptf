@@ -1,23 +1,21 @@
 module unittestf
 
     private
-    public :: assert_opt
+    public :: assert_char
 
     contains
 
-
-
-function assert_char(c, expected):
+function assert_char(c, expected)
     implicit none
 
     character, intent(in) :: c        ! Value returned by getopt
     character, intent(in) :: expected ! The value we expect
-    logical :: assert_opt
+    logical :: assert_char
 
     if ( c == expected) then
-        assert_opt = .TRUE.
+        assert_char = .TRUE.
     else
-        assert_opt = .FALSE.
+        assert_char = .FALSE.
     end if
     
     return

@@ -7,8 +7,8 @@ program test_options_simple
 ! ./test_options_simple -a -b -c -12 -3
 !
 
-    use getoptf_m
-    use unittestf, only assert_char
+    use getoptf, only : getopt
+    use unittestf, only : assert_char
 
     implicit none
 
@@ -17,13 +17,15 @@ program test_options_simple
     ! getoptf variables
     character (len=255) :: argv
     integer :: argc
-    character :: c 
+    character :: c
+    !character (len=255) :: optString = "abc123"
+
 
     ! debug variables 
     integer :: optcnt ! Will count our arguments
     integer :: numTests, numErrs, numSuc
     ! "Option: 1 was character: a expedted: a - Test - PASSED"
-    character (len=300), parameter :: OPT_TST_FMT = "A, I2, A, A, A, A, I, A"
+    character (len=300), parameter :: OPT_TST_FMT = "(A, I2, A, A, A, A, I, A)"
 
 
     if (verbose > 0) then
@@ -41,10 +43,10 @@ program test_options_simple
     optcnt = 0 
     numErrs = 0
     numSuc = 0
-do while(getopt(argc, argv, c "abc123") /= -1) 
-        select case (c)
-            case ('a'):
-        if(assert_opt(c, 'a')) then
+do while(getopt(argc, argv, c, "abc123")) 
+    select case (c)
+    case ('a')
+        if(assert_char(c, 'a')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
@@ -53,8 +55,8 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
-    case ('b'):
-        if(assert_opt(c, 'b')) then
+    case ('b')
+        if(assert_char(c, 'b')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
@@ -63,8 +65,8 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
-    case ('c'):
-        if(assert_opt(c, 'c')) then
+    case ('c')
+        if(assert_char(c, 'c')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
@@ -73,8 +75,8 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
-    case ('1'):
-        if(assert_opt(c, '1')) then
+    case ('1')
+        if(assert_char(c, '1')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
@@ -83,8 +85,8 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
-    case ('2'):
-        if(assert_opt(c, '2')) then
+    case ('2')
+        if(assert_char(c, '2')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
         else
@@ -92,8 +94,8 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
-    case ('3'):
-        if(assert_opt(c, '3')) then
+    case ('3')
+        if(assert_char(c, '3')) then
             write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
         else
@@ -101,11 +103,12 @@ do while(getopt(argc, argv, c "abc123") /= -1)
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
+   end select
 end do
 
 write(0, *) "Test finish"
-write(0, *) "Total tests: ", numSuc + numErr
+write(0, *) "Total tests: ", numSuc + numErrs
 write(0, *) "Number of Success: ", numSuc
-write(0, *) "Number of Failures: ", numErr
+write(0, *) "Number of Failures: ", numErrs
 
 end program test_options_simple
