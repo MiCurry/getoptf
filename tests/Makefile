@@ -1,25 +1,18 @@
+test_options: unittestf test_options.f90 ../getoptf.o unittestf.o
+	$(FC) $(FFLAGS) -module ../ test_options.f90 -o test_options unittestf.o ../getoptf.o
 
-$(COMPILER) 
-$(FFLAGS)
+test_arguments: unittestf test_arguments.f90 ../getoptf.o unittestf.o
+	$(FC) $(FFLAGS) -module ../ test_arguments.f90 -o test_arguments unittestf.o ../getoptf.o
 
-
-all:
-
-# Tests
-test_options: test_options.f90 getoptf.o unittest.o
-	$(COMPILER) $(FFLAGS) test_options.f90 -o test_options unittest.o
-
-test_arguments: test_arguments.f90 getoptf.o unittest.o
-	$(COMPILER) $(FFLAGS) test_arguments.f90 -o test_arguments unittest.o
-
+run: test_options
+	./test_options 
 
 # Modules
-
 unittestf: unittestf.f90
-	$(COMPILER) $(FFLAGS) -c unittest.f90
+	$(FC) $(FFLAGS) -c unittestf.f90
 
-getoptf: getoptf.f90
-	$(COMPILER) $(FFLAGS) -c getoptf.f90
+clean:
+	rm -f *.mod *.o test_options
 
 
 # Other test options
