@@ -25,7 +25,8 @@ program test_options_simple
     integer :: optcnt ! Will count our arguments
     integer :: numTests, numErrs, numSuc
     ! "Option: 1 was character: a expedted: a - Test - PASSED"
-    character (len=300), parameter :: OPT_TST_FMT = "(A, I2, A, A, A, A, I, A)"
+    character (len=300), parameter :: OPT_TST_FMT = "(A, I2, A, A, A, A, I2, A)"
+
 
 
     if (verbose > 0) then
@@ -33,6 +34,13 @@ program test_options_simple
     end if
 
     argc = command_argument_count()
+
+    if( argc < 1 ) then
+        write(0,*) "Please launch this program from the command line as:"
+        write(0,*) "./test_options -a -b -c -12 -3"
+        stop
+    endif
+
     call get_command(argv)
 
     if (verbose > 0) then

@@ -1,6 +1,6 @@
 program getoptTest
 
-    !use getoptf_m only, getopt
+    use getoptf_m, only : getoptf
 
     implicit none
 
@@ -8,21 +8,15 @@ program getoptTest
     integer :: argc             ! The number of command line arguments
     integer :: c 
 
-
     argc = command_argument_count()
-    argv = get_command()
+    call get_command(argv)
 
-    do while ( getopt(argc, argv, c, " ") /= -1 )
-        select case(c)
-            case (v)
-            
-            case (h)
+    c = getoptf(argc, argv, c, " ")
 
-            case (v)
+    !do while ( getopt(argc, argv, c, " ") /= -1 )
+        ! Switch statement here
 
-        end select
-
-    end do
+    !end do
     
 
 

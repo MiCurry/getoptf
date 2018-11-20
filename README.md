@@ -71,9 +71,9 @@ the argument list) use the getoptf - `get_arg_count()` command.
   characters for options. ie: The count of [a-zA-Z0-9] plus the allowed special
   characters.
 * Portable - 100% Compatible with GNU, Intel, Portland Group 
-* Function returns an integer type
-    * Returns -1 when the argument list is exhausted
-    * Otherwise Returns 0
+* Function returns a logical type
+    * If .TRUE.  - there are more options to be processed
+    * If .FALSE. - The last option has been processed
 * Contains the global variables `optind`, `optarg`, `opterr`, `optopt`,
   `optreset`
     * `optarg` - Points to an option argument 
