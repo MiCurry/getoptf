@@ -134,6 +134,13 @@ Feature Ideas
     * Or we could just do the normal getopt way which is -f file1 -f file2 -f file3
     etc.
 
+Actual Design
+* Options from the optString are parsed into a linked list of options. At first
+implementation they are listed in first in last out (FILO) order, so the last
+option is listed first and the first option is listed first. Examine, if any,
+benefits to having either FIFO or FILO. It may not even matter!
+
+
 ## Programmer
 
 * Parse a string of arguments and allocate an 'argument' type with the arguments 
