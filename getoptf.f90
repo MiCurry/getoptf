@@ -57,17 +57,18 @@ module getoptf
         endif
 
         write(0,*) ""
+        write(0,*) "DEBUG: printing valid options - (found in the optstring)"
         write(0,*) "There are ", optcnt, " options"
-        write(0,*) ""
-        
         cur => optlist%next
         do i = 1, optcnt, 1
             write(0,*) "Option Num: ", i, " of: ", optcnt
             write(0,*) "Option name: ", cur%short_opt
-            write(0,*) "Arg Req: ", cur%argument 
-            write(0,*) ""
+            write(0,*) "Arg Required: ", cur%argument 
             cur => cur%next
         enddo
+
+        write(0,*) "DEBUG: End list of valid options"
+        write(0,*) ""
 
     end subroutine
 
@@ -80,15 +81,16 @@ module getoptf
         integer :: i
 
         if (DEBUG > 0) then
-            write(0,*) "add_option: opt%short_opt", opt%short_opt, optcnt
+            write(0,*) "DEBUG: add_option - About to add an option.."
+            write(0,*) "optcnt = ", optcnt
+            write(0,*) "option%short_opt = ", opt%short_opt
+            write(0,*) "option%argument = ", opt%argument
         endif
 
         if (optcnt == 0) then
-            if(DEBUG>0) write(0,*) "Added our first option!"
             optlist%next=>opt
             optcnt = optcnt + 1
         else
-            if(DEBUG>0) write(0,*) "Added too our option list"
             opt%next=>optlist%next
             optlist%next=>opt
             optcnt = optcnt + 1
@@ -144,29 +146,28 @@ module getoptf
                 call print_valid_options() 
             endif
 
-            if( optString(i:i) == '?' ) then      ! Error
-                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+            if( optString(i:i) == '?' ) then      ! Error - Illegal Option
+                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
-            elseif( optString(i:i) =='-' ) then   ! Error
-                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+            elseif( optString(i:i) =='-' ) then   ! Error - Illegal Option
+                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
             elseif( optString(:1) == ':' .AND. optString(2:2) == ':' ) then ! Error
-                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
-                ! Error "If the 1st and the 2nd chars are both ':' throw an error
-                write(0, *)
+                ! Error - 2 ':' next to each other
+                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
+                write(0,*) "getoptf: Cannot have ':' followed by a ':'"
+                write(0,*)
                 stop
             elseif( optString(i:i) == ':' .AND. i == 1 ) then
                 ! Surpress Error Messages
             else
                 ! Then we have a valid option
-                if(DEBUG > 0) then
-                    write(0,*) "DEBUG: We have a new option: ", optString(i:i)
-                endif
-
                 opt%short_opt = optString(i:i)
+                opt%argument = .FALSE.
 
                 if( i == len(optString)) then 
-                    opt%argument = .FALSE.;
+                    ! Ensure we are not tryhing to access area out-of-bounds
+                    if(DEBUG>0) write(0,*) " No argument required for this option"
                 else
                     if (optString(i+1:i+1) == ':') then
                         opt%argument = .TRUE.
