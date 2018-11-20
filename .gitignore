@@ -1,0 +1,7 @@
+*.swp
+.*.swp
+*.mod
+*.o
+*.out
+*test_options
+*test_arguments
