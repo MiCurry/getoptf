@@ -22,7 +22,7 @@ unittestf: unittestf.f90
 	$(FC) $(FFLAGS) -c unittestf.f90
 
 clean:
-	rm -f *.mod *.o test_options
+	rm -f *.mod *.o ../test_options ../test_arguments ../test_options_long
 
 
 # Other test options
