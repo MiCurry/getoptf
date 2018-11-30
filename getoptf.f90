@@ -38,65 +38,69 @@ module getoptf
         character(len=256) :: long_opt   ! The long specifier for the optoin
         type (option), pointer :: next => null()
     end type option 
-    integer :: optcnt = 0
 
-    type (option), target :: optlist
+    type (option), pointer :: optlist => null()
+    integer :: optlist_cnt = 0
+    type (option), pointer :: arglist => null()
+    integer :: arglist_cnt = 0
 
     contains
 
-    ! 100% a debugger function
-    subroutine print_valid_options()
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: print_list()
+    !
+    ! Description: Prints a option type linked list
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine print_list(cur)
         implicit none
         
         type(option), pointer :: cur
         integer :: i
 
-        if (optcnt == 0) then
+        if (optlist_cnt == 0) then
             write(0,*) "There are no options to print"
             return 
         endif
 
         write(0,*) ""
-        write(0,*) "DEBUG: printing valid options - (found in the optstring)"
-        write(0,*) "There are ", optcnt, " options"
-        cur => optlist%next
-        do i = 1, optcnt, 1
-            write(0,*) "Option Num: ", i, " of: ", optcnt
+        write(0,*) "There are ", optlist_cnt, " options"
+        write(0,*) ""
+        
+        do i = 1, optlist_cnt, 1
+            write(0,*) "Option Num: ", i, " of: ", optlist_cnt
             write(0,*) "Option name: ", cur%short_opt
-            write(0,*) "Arg Required: ", cur%argument 
+            write(0,*) "Arg Req: ", cur%argument 
+            write(0,*) ""
             cur => cur%next
         enddo
-
-        write(0,*) "DEBUG: End list of valid options"
-        write(0,*) ""
-
-    end subroutine
+    end subroutine print_list
 
 
-    ! Allocate and add the option to the list
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: add_option
+    !
+    ! Description: 
+    !
+    ! Input: opt - an allocated and initialized option type
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine add_option(opt)
         implicit none
 
         type(option), pointer :: opt, cur
         integer :: i
 
-        if (DEBUG > 0) then
-            write(0,*) "DEBUG: add_option - About to add an option.."
-            write(0,*) "optcnt = ", optcnt
-            write(0,*) "option%short_opt = ", opt%short_opt
-            write(0,*) "option%argument = ", opt%argument
-        endif
-
-        if (optcnt == 0) then
-            optlist%next=>opt
-            optcnt = optcnt + 1
+        if (optlist_cnt == 0) then
+            optlist => opt
+            optlist_cnt = optlist_cnt + 1
         else
-            opt%next=>optlist%next
-            optlist%next=>opt
-            optcnt = optcnt + 1
+            opt%next => optlist
+            optlist => opt
+            optlist_cnt = optlist_cnt + 1
         endif
-
-        allocate(opt)
 
     end subroutine add_option
 
@@ -109,18 +113,10 @@ module getoptf
     ! for each specifier.
     !
     ! Input: optString -- The specified format of the string by the programmer
+    !                     Example: "ab1:v:f1:f2"
     !
-    ! Return value: 0 on success -1 on error
+    ! Return value: 
     !
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! Development Notes:
-    !
-    ! 1. Print out encourted errors if opterr is set
-    !   - Also determine what errors can be caused when parsing the optstring
-    !
-    ! It appears that no errors are genereated if the format string contains
-    ! an error or an invalid character! An error is only produced when
-    ! the user supplies an invalid option.
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     function parse_format(optString)
@@ -133,47 +129,49 @@ module getoptf
 
         type(option), pointer :: opt
 
-        if(DEBUG > 0) write(0,*) "getopt: ", optString
+        if(DEBUG > 0) write(0,*) "getopt: optstring is:", optString
 
-
-        ! For each option we encounter
-        !  check to see if its valid
-        !  - If its valid then allocated it to our ll of valid options
-        !  - If its not valid then stop and report an error
         do i = 1, len(optString), 1
 
-            if(DEBUG > 1) then
-                call print_valid_options() 
-            endif
+            ! Error
+            if( optString(i:i) == '?' ) then
+                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+                stop
+            
+            ! Error
+            elseif( optString(i:i) =='-' ) then
+                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+                stop
 
-            if( optString(i:i) == '?' ) then      ! Error - Illegal Option
-                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
+            ! Error - If we encouter
+            elseif( optString(:1) == ':' .AND. optString(2:2) == ':' ) then
+                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+                ! Error "If the 1st and the 2nd chars are both ':' throw an error
+                write(0, *)
                 stop
-            elseif( optString(i:i) =='-' ) then   ! Error - Illegal Option
-                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
-                stop
-            elseif( optString(:1) == ':' .AND. optString(2:2) == ':' ) then ! Error
-                ! Error - 2 ':' next to each other
-                write(0,*) "getoptf: Illegal option in optString: ", optString(i:i)
-                write(0,*) "getoptf: Cannot have ':' followed by a ':'"
-                write(0,*)
-                stop
-            elseif( optString(i:i) == ':' .AND. i == 1 ) then
-                ! Surpress Error Messages
-            else
-                ! Then we have a valid option
+
+            ! Surpress Error Messages
+            elseif( optString(1:1) == ':') then
+                ! pass
+
+            ! Valid option
+            else 
+                if(DEBUG > 1) then
+                    write(0,*) "DEBUG: We have a new option: ", optString(i:i)
+                endif
+
+                allocate(opt)
+
                 opt%short_opt = optString(i:i)
-                opt%argument = .FALSE.
 
                 if( i == len(optString)) then 
-                    ! Ensure we are not tryhing to access area out-of-bounds
-                    if(DEBUG>0) write(0,*) " No argument required for this option"
+                    opt%argument = .FALSE.;
                 else
-                    if (optString(i+1:i+1) == ':') then
+                    if (optString(i+1:i+1) == ':') then 
                         opt%argument = .TRUE.
                     endif
                 endif
-                call add_option(opt)                 ! Add the option to the optList
+                call add_option(opt)
             endif
         enddo
 
@@ -216,6 +214,8 @@ module getoptf
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Name: getoptf 
     !
+    ! Example call to get opt: do while ( getopt(argc, argv, c, " ") /= -1 )
+    !
     ! Input: argc - intent(in)  -- The argument count - Integer
     !        argv - intent(in)  -- The string of options and their arguments (if any) - character string
     !           c - intent(out) -- A character to hold the currently proccessed valid option
@@ -226,7 +226,6 @@ module getoptf
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     function getopt(argc, argv, c, format)
-        !Example call to get opt: do while ( getopt(argc, argv, c, " ") /= -1 )
 
         implicit none
     
@@ -253,7 +252,7 @@ module getoptf
                  !report error
              end if
              if(DEBUG>0) then
-                 call print_valid_options()
+                 call print_list(optlist)
              endif
         end if
 
