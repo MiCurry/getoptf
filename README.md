@@ -1,3 +1,12 @@
+
+# Development Logs - Because I always forget what I was working on..
+* 12/11/18 - 4:21 pm - Added the arglist. Now each list is a generic list of
+the derived `type option`. Each list is now allocated in the main function
+(though it still needs to be fully implemented so do this next.). Also changed
+how the linked list is processed, no more counts! - Possibly might make things
+doubly linked, so we can cruise though the options in a specific order.
+
+
 # getoptf.f90 
 
 A Fortran implementation of getopt.

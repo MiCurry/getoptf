@@ -1,5 +1,7 @@
 LINK=
 
+FFLAGS=-g
+
 ifeq ($(FC), ifort)
 	LINK= -module ../
 else

@@ -37,12 +37,8 @@ module getoptf
         character :: short_opt  ! The speifiers for the option
         character(len=256) :: long_opt   ! The long specifier for the optoin
         type (option), pointer :: next => null()
+        type (option), pointer :: prev => null()
     end type option 
-
-    type (option), pointer :: optlist => null()
-    integer :: optlist_cnt = 0
-    type (option), pointer :: arglist => null()
-    integer :: arglist_cnt = 0
 
     contains
 
@@ -53,28 +49,36 @@ module getoptf
     ! Description: Prints a option type linked list
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine print_list(cur)
+    subroutine print_list(list)
         implicit none
         
-        type(option), pointer :: cur
-        integer :: i
+        ! Input variables
+        type(option), pointer, intent(in) :: list
 
-        if (optlist_cnt == 0) then
+        ! Local variables
+        type(option), pointer :: cur
+        integer :: i = 1
+
+        cur => list
+        if (associated(cur%next) == .FALSE. ) then
             write(0,*) "There are no options to print"
-            return 
+        else
+            cur => list%next
+            do while(associated(cur%next))
+                write(0,*) "Option Num: ", i
+                write(0,*) "Option name: ", cur%short_opt
+                write(0,*) "Arg Req: ", cur%argument 
+                write(0,*) ""
+                cur => cur%next
+                i = i + 1
+
+                if (associated(cur, list)) then
+                    write(0,*) "We are at the list head"
+                    exit
+                endif
+            enddo
         endif
 
-        write(0,*) ""
-        write(0,*) "There are ", optlist_cnt, " options"
-        write(0,*) ""
-        
-        do i = 1, optlist_cnt, 1
-            write(0,*) "Option Num: ", i, " of: ", optlist_cnt
-            write(0,*) "Option name: ", cur%short_opt
-            write(0,*) "Arg Req: ", cur%argument 
-            write(0,*) ""
-            cur => cur%next
-        enddo
     end subroutine print_list
 
 
@@ -87,19 +91,24 @@ module getoptf
     ! Input: opt - an allocated and initialized option type
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine add_option(opt)
+    subroutine add_option(opt, list)
         implicit none
 
-        type(option), pointer :: opt, cur
+        ! Input variables
+        type(option), pointer :: opt
+        type(option), pointer :: list
+
+        ! Local variables
         integer :: i
 
-        if (optlist_cnt == 0) then
-            optlist => opt
-            optlist_cnt = optlist_cnt + 1
-        else
-            opt%next => optlist
-            optlist => opt
-            optlist_cnt = optlist_cnt + 1
+        if (associated(list%next)) then
+            list%next%prev => opt
+            opt%next => list%next
+            list%next => opt
+            opt%prev => list
+        else ! First item in the list
+            list%next => opt 
+            opt%next => list
         endif
 
     end subroutine add_option
@@ -119,15 +128,19 @@ module getoptf
     !
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function parse_format(optString)
+    function parse_format(optString, list)
         implicit none
 
+        ! Input variables
         character(len=*), intent(in) :: optString
-        integer :: parse_format ! Return Value
+        type(option), pointer :: list
 
-        integer :: i, j, k
+        ! Return value
+        integer :: parse_format 
 
+        ! Local variables
         type(option), pointer :: opt
+        integer :: i, j, k
 
         if(DEBUG > 0) write(0,*) "getopt: optstring is:", optString
 
@@ -171,7 +184,7 @@ module getoptf
                         opt%argument = .TRUE.
                     endif
                 endif
-                call add_option(opt)
+                call add_option(opt, list)
             endif
         enddo
 
@@ -239,7 +252,12 @@ module getoptf
         logical :: getopt
         
         ! Local variables
+        type(option), pointer :: optlist
+        type(option), pointer :: arglist
         integer :: ierr
+
+        allocate(optlist)
+        allocate(arglist)
 
         argc_l = argc
         argv_l = argv
@@ -247,7 +265,7 @@ module getoptf
         c = '?'
 
         if(first_call_flag) then
-             ierr = parse_format(format)
+             ierr = parse_format(format, optlist)
              if (ierr == FORMAT_PARSE_ERROR) then 
                  !report error
              end if
