@@ -1,5 +1,6 @@
 module getoptf
 
+
     private 
     public :: getopt
 
@@ -21,7 +22,9 @@ module getoptf
     integer :: argc_l
     character(len=256) :: argv_l
 
-    logical :: first_call_flag = .TRUE. ! Set to false after first call
+    logical :: FIRST_CALL_FLAG = .TRUE. ! Set to false after first call
+    logical :: OUTPUT
+    
 
     integer, parameter :: FORMAT_PARSE_ERROR = -1
     integer, parameter :: OPTION_PARSE_ERROR = -1
@@ -29,13 +32,20 @@ module getoptf
 
     INTEGER, PARAMETER :: DEBUG = 1
 
+    character, parameter :: SPACE = ' '
+    character, parameter :: DASH = '-'
+    character, parameter :: COLON = ':'
+    character, parameter :: QUESTION_MARK = '?'
+    character(len=*), parameter :: MAYBE = "MAYBE"
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! type option - The option struct
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type option 
-        logical :: argument = .FALSE.     ! If False == no options if True == options
+        logical :: argument     ! If False == no options if True == options
         character :: short_opt  ! The speifiers for the option
         character(len=256) :: long_opt   ! The long specifier for the optoin
+        character(len=256) :: arg   ! The argument associated with this option
         type (option), pointer :: next => null()
         type (option), pointer :: prev => null()
     end type option 
@@ -60,7 +70,7 @@ module getoptf
         integer :: i = 1
 
         cur => list
-        if (associated(cur%next) == .FALSE. ) then
+        if (associated(cur%next) .EQV. .FALSE. ) then
             write(0,*) "There are no options to print"
         else
             cur => list%next
@@ -73,13 +83,47 @@ module getoptf
                 i = i + 1
 
                 if (associated(cur, list)) then
-                    write(0,*) "We are at the list head"
-                    exit
+                    exit ! We have returned to the list head - Exit
                 endif
             enddo
         endif
 
     end subroutine print_list
+
+    ! Get the first option that was added
+    function get_first(list, opt)
+        implicit none
+        ! Input variables
+        type(option), pointer, intent(in) :: list
+        type(option), intent(out) :: opt
+        ! Return value
+        logical :: get_first
+        ! Local variables
+
+        if(associated(list%prev)) then
+            get_first = .TRUE.
+            opt = list%prev
+        else
+            get_first = .FALSE.
+        endif
+    end function get_first
+
+    ! Get the last option that was allocated
+    function get_last(list, opt)
+        implicit none
+        ! Input variables
+        type(option), pointer, intent(in) :: list
+        type(option), intent(out) :: opt
+        ! Return variable
+        logical :: get_last
+        
+        if(associated(list%next)) then
+            get_last = .TRUE.
+            opt = list%next
+        else
+            get_last = .FALSE.
+        endif
+    end function get_last
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -97,9 +141,6 @@ module getoptf
         ! Input variables
         type(option), pointer :: opt
         type(option), pointer :: list
-
-        ! Local variables
-        integer :: i
 
         if (associated(list%next)) then
             list%next%prev => opt
@@ -140,12 +181,13 @@ module getoptf
 
         ! Local variables
         type(option), pointer :: opt
-        integer :: i, j, k
+        integer :: i
 
         if(DEBUG > 0) write(0,*) "getopt: optstring is:", optString
 
-        do i = 1, len(optString), 1
+        write(0,*) "Optstring length=", len(optString)
 
+        do i = 1, len(optString), 1
             ! Error
             if( optString(i:i) == '?' ) then
                 write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
@@ -157,16 +199,16 @@ module getoptf
                 stop
 
             ! Error - If we encouter
-            elseif( optString(:1) == ':' .AND. optString(2:2) == ':' ) then
-                write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
-                ! Error "If the 1st and the 2nd chars are both ':' throw an error
-                write(0, *)
-                stop
-
+            elseif ( len(optString) > 1) then
+                if ( optString(1:1) == ':' .AND. optString(2:2) == ':' ) then
+                    write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
+                    ! Error "If the 1st and the 2nd chars are both ':' throw an error
+                    write(0, *)
+                    stop
+                endif
             ! Surpress Error Messages
             elseif( optString(1:1) == ':') then
                 ! pass
-
             ! Valid option
             else 
                 if(DEBUG > 1) then
@@ -179,10 +221,8 @@ module getoptf
 
                 if( i == len(optString)) then 
                     opt%argument = .FALSE.;
-                else
-                    if (optString(i+1:i+1) == ':') then 
+                else if (optString(i+1:i+1) == ':') then 
                         opt%argument = .TRUE.
-                    endif
                 endif
                 call add_option(opt, list)
             endif
@@ -194,7 +234,7 @@ module getoptf
     
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! Name: parse_options
+    ! Name: parse_argv
     !
     ! Description: Parse through the commands and return each option (with its arguments
     ! and stuff. Then remove that argument from the command so we can parse
@@ -214,14 +254,53 @@ module getoptf
     !   * `---` -- Prints out the following twice: './a.out invalid option -- '-''
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function parse_options(options)
+    function parse_argv(argv, list)
         implicit none
 
-        character(len=*) :: options
-        integer :: parse_options
+        ! Input variables 
+        character(len=*), intent(in) :: argv
+        type(option), pointer :: list
 
-        parse_options = 0
-    end function parse_options
+        ! Return variable
+        logical :: parse_argv
+
+        ! Local variables
+        type(option), pointer :: arg
+        integer :: i, j
+        integer :: CMD_LENGTH
+
+        ! Zip through argv, and gather all the arguments
+        
+        ! Deterime the program name - so we can save it and skip over it
+        do i = 1, len(argv)
+            if(argv(i:i) == SPACE) then
+                CMD_LENGTH = i - 1
+                exit
+            endif
+        enddo
+        i = i - 1
+
+        if(DEBUG>0) then
+            write(0,*) "The length of the command was: ", i
+            write(0,*) "And the command was: ", argv(1:i)
+            write(0,*) ""
+        endif
+
+         
+        do while( i < len(argv)) ! For the whole length of argv
+            if( argv(i:i) == DASH ) then
+                j = i
+                do while ( argv(j:j) /= SPACE .OR. j == len(argv) )
+                    j = j + 1
+                enddo
+                write(0,*) "Argument/Option: ", argv(i:j)
+            endif
+            i = i + 1
+        enddo
+
+
+        parse_argv = .FALSE.
+    end function parse_argv
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -230,6 +309,7 @@ module getoptf
     ! Example call to get opt: do while ( getopt(argc, argv, c, " ") /= -1 )
     !
     ! Input: argc - intent(in)  -- The argument count - Integer
+
     !        argv - intent(in)  -- The string of options and their arguments (if any) - character string
     !           c - intent(out) -- A character to hold the currently proccessed valid option
     !      format - intent(in)  -- The optString of valid options
@@ -274,6 +354,22 @@ module getoptf
              endif
         end if
 
-        getopt = .FALSE.
+        if(argc /= 0) then
+            write(0,*) "Now going to parse options"
+            getopt = parse_argv(argv, arglist)
+        else
+            getopt = .FALSE.
+            if(DEBUG>0) then
+                write(0,*) "No commandline options or arguments were passed in - so we are returning"
+            endif
+            return
+         endif
+        
+        if(DEBUG>0) then
+            call print_list(arglist)
+        endif
+
+        write(0,*) ""
+
     end function getopt
 end module getoptf
