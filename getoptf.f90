@@ -26,12 +26,14 @@ module getoptf
     ! type option - The option struct
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type option 
-        logical :: argument     ! If False == no options if True == options
-        character :: short_opt  ! The speifiers for the option
-        character(len=256) :: arg   ! The argument associated with this option
+        character :: short_opt                      ! The speifiers for the option
+        character(len=:), allocatable :: long_opt   ! The long specifier for the optoin
+
+        character(len=:), allocatable :: arg   ! The argument associated with this option
+        logical :: argument                    ! If False == no options if True == options
+
         type (option), pointer :: next => null()
         type (option), pointer :: prev => null()
-        character(len=:), allocatable :: long_opt   ! The long specifier for the optoin
     end type option 
 
     contains
@@ -53,6 +55,8 @@ module getoptf
         type(option), pointer :: cur
         integer :: i = 1
 
+        i = 1
+
         cur => list
         if ( .NOT. associated(cur%next)) then
             write(0,*) "There are no options to print"
@@ -62,7 +66,7 @@ module getoptf
                 write(0,*) "Option Num: ", i
                 write(0,*) "Option name: ", cur%short_opt
                 write(0,*) "Option Long: ", cur%long_opt
-                write(0,*) "Arg Req: ", cur%argument 
+                write(0,*) "Argument: ", cur%argument 
                 write(0,*) ""
                 cur => cur%next
                 i = i + 1
@@ -201,7 +205,9 @@ module getoptf
             allocate(opt)
             opt%short_opt = optString(i:i)
             allocate(character(len(opt%short_opt)) :: opt%long_opt)
+            allocate(character(len(opt%short_opt)) :: opt%arg)
             opt%long_opt=opt%short_opt
+            opt%arg=opt%short_opt
 
             if( i == len(optString)) then 
                 opt%argument = .FALSE.;
@@ -263,7 +269,6 @@ module getoptf
                 exit
             endif
         enddo
-        i = i - 1
 
         if(DEBUG>0) then
             write(0,*) "The length of the command was: ", i
@@ -274,26 +279,42 @@ module getoptf
         allocate(cmdlist)
          
         do while( i < len(argv)) ! For the whole length of argv
-            if( argv(i:i) == DASH ) then
+            if( argv(i:i) /= SPACE ) then ! We have an argument
+                allocate(cmd)
+
                 j = i
+
+                if( argv(j:j) == DASH) then
+                    cmd%argument = .FALSE. ! This is not an argument    
+                else
+                    cmd%argument = .TRUE. ! This is an argument
+                endif
+
+                ! Loop to the end of this option/argument
                 do while ( argv(j:j) /= SPACE .OR. j == len(argv) )
                     j = j + 1
                 enddo
 
-                ! Process this command 
-                write(0,*) "Argument/Option: ", argv(i:j)
-
-                allocate(cmd)
-                allocate(character(j - i + 1) :: cmd%long_opt)
+                if(DEBUG > 1) then
+                    write(0,*) "Option: ", argv(i:j)
+                endif
                 
+                ! Allocate it
+                allocate(character(j - i + 1) :: cmd%long_opt)
+                allocate(character(1) :: cmd%arg)
+                
+                ! And then save it it and add it too the list!
                 cmd%short_opt = 'z'
                 cmd%long_opt = argv(i:j)
-
+                cmd%arg='-'
                 call add_option(cmd, cmdlist)
+                i = j ! Skip over this opt/arg in argv
             endif
 
             i = i + 1
         enddo
+
+        write(0,*)""
 
         if (DEBUG > 2) then
             call print_list(cmdlist)
@@ -355,6 +376,10 @@ module getoptf
         if(argc /= 0) then
             write(0,*) "Now going to parse options"
             getopt = parse_argv(argv, arglist)
+
+            if(DEBUG>0) then
+                call print_list(arglist)
+            endif
         else
             getopt = .FALSE.
             if(DEBUG>0) then
@@ -363,9 +388,6 @@ module getoptf
             return
          endif
         
-        if(DEBUG>0) then
-            call print_list(arglist)
-        endif
 
         write(0,*) ""
 
