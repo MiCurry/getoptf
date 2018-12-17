@@ -51,7 +51,7 @@ program test_options_simple
     optcnt = 0 
     numErrs = 0
     numSuc = 0
-do while(getopt(argc, argv, c, "abc123")) 
+do while(getopt(argc, argv, c, "abcdefgh")) 
     select case (c)
     case ('a')
         if(assert_char(c, 'a')) then

@@ -1,6 +1,5 @@
 module getoptf
 
-
     private 
     public :: getopt
 
@@ -13,30 +12,15 @@ module getoptf
     integer :: opterr, optopt, optind
     character(len=256) :: optarg
 
-    integer :: ARG_COUNT                ! Global argc
-    character(len=256) :: ARG_ARRAY     ! Global argv
-    character(len=256) :: ARG_FORMAT    ! Global format specificatoin
-
-    ! Local List of argument string, arg count  that we'll use to keep track
-    ! of what options we have to proccess
-    integer :: argc_l
-    character(len=256) :: argv_l
-
     logical :: FIRST_CALL_FLAG = .TRUE. ! Set to false after first call
-    logical :: OUTPUT
     
-
-    integer, parameter :: FORMAT_PARSE_ERROR = -1
-    integer, parameter :: OPTION_PARSE_ERROR = -1
-    integer, parameter :: ERROR = -1
-
-    INTEGER, PARAMETER :: DEBUG = 1
-
     character, parameter :: SPACE = ' '
     character, parameter :: DASH = '-'
     character, parameter :: COLON = ':'
     character, parameter :: QUESTION_MARK = '?'
     character(len=*), parameter :: MAYBE = "MAYBE"
+
+    INTEGER, PARAMETER :: DEBUG = 1
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! type option - The option struct
@@ -351,9 +335,6 @@ module getoptf
 
         allocate(optlist)
         allocate(arglist)
-
-        argc_l = argc
-        argv_l = argv
 
         c = '?'
 
