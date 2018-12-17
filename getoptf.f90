@@ -199,8 +199,9 @@ module getoptf
 
             ! Valid option
             allocate(opt)
-
             opt%short_opt = optString(i:i)
+            allocate(character(len(opt%short_opt)) :: opt%long_opt)
+            opt%long_opt=opt%short_opt
 
             if( i == len(optString)) then 
                 opt%argument = .FALSE.;
@@ -294,8 +295,11 @@ module getoptf
             i = i + 1
         enddo
 
-        call print_list(cmdlist)
+        if (DEBUG > 2) then
+            call print_list(cmdlist)
+        endif
 
+        list => cmdList
         parse_argv = .FALSE.
     end function parse_argv
 
@@ -340,7 +344,7 @@ module getoptf
 
         if(first_call_flag) then
              ierr = parse_format(format, optlist)
-             if (ierr == FORMAT_PARSE_ERROR) then 
+             if (ierr == -1) then 
                  !report error
              end if
              if(DEBUG>0) then
