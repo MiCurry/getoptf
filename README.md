@@ -11,12 +11,6 @@ doubly linked, so we can cruise though the options in a specific order.
 
 A Fortran implementation of getopt.
 
-# TODO:
-
-1. Design Document
-2. Unit Tests!
-3. Write code!
-
 ## Usage
 ```
 do while(getopt(argc, argv, c ":f:v:12") /= -1) 
@@ -107,73 +101,7 @@ the argument list) use the getoptf - `get_arg_count()` command.
 * Can process multiple arguments:
     * `./a.out -f file1 -f file2 -f file3`
 
-
-# Testing Framework
-
-Ideas On Framework - Python? Makefile? By hand?
-* Use a Python program to pass commands to Fortran programs and check returned
-  results
-* Have a Makefile rule to run tests - Can't check results easily.. Only by
-viewing
-* Run checks by hand - gross!
-* Have a Fortran program tests programs - Probably not that easy since running
-  command line programs from Fortran isn't very easy, or portable.
-
-What are we actually checking?
-* Have the program print out its values, and have Python check them that way
-* So when we pass getopt an option, after its process it will return, and
-we'll print out the variables, (`c`, `optopt`, `opterr`, `optarg`, `optint`
-etc) to the screen to be tested.
-
 # Design
-
-Take in a string of command line arguments from the user as well as a command 
-line specification from the programmer and allow the programmer to obtain the 
-values that are specified by the user.
-
-Feature Ideas
-* Give arguments default types
-    * We could either give arguments default types or leave them as characters
-    and leave it up to the programmer to type change. That might be a good
-    thing as its not to hard for programmers to type change in Fortran and it
-    allows flexibility. Changing the type for the programmer would be nice,
-    but just might make things easier.
-* Allow options to have >= 1 argument. 
-    * That way we could do -f file1 file2 file3.
-    * Or we could just do the normal getopt way which is -f file1 -f file2 -f file3
-    etc.
-
-Actual Design
-* Options from the optString are parsed into a linked list of options. At first
-implementation they are listed in first in last out (FILO) order, so the last
-option is listed first and the first option is listed first. Examine, if any,
-benefits to having either FIFO or FILO. It may not even matter!
-
-
-## Programmer
-
-* Parse a string of arguments and allocate an 'argument' type with the arguments 
-information to be used to check against the input from the user.
-
-## User
-* Parse a string and grab the arguments while checking against the allocated
-arguments specified by the programmer
-    * If the argument is incorrect or does not match any allocated args, report
-    an error.
-    * If the argument does not contain a value when it should (or visa versa)
-    then report an error
-    * if the argument is good returns its value(s) to the programmer.
-
-# Notes & Resources
-
-Fortran poses a different challenge then C as it does not contain an argv 
-variable that holds the entire command line arguments.
-
-However, it does have the ability to get a SINGLE argument at a time via
-GET_COMMAND_ARUGMENT(i) where i is the numbered argument you wish to get.
-so we will have to use this to help us to parse through the command arguments.
-
-THATS WRONG! It does via get_command! woohoo!
 
 
 ## Resources
