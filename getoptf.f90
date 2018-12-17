@@ -44,10 +44,10 @@ module getoptf
     type option 
         logical :: argument     ! If False == no options if True == options
         character :: short_opt  ! The speifiers for the option
-        character(len=256) :: long_opt   ! The long specifier for the optoin
         character(len=256) :: arg   ! The argument associated with this option
         type (option), pointer :: next => null()
         type (option), pointer :: prev => null()
+        character(len=:), allocatable :: long_opt   ! The long specifier for the optoin
     end type option 
 
     contains
@@ -70,13 +70,14 @@ module getoptf
         integer :: i = 1
 
         cur => list
-        if (associated(cur%next) .EQV. .FALSE. ) then
+        if ( .NOT. associated(cur%next)) then
             write(0,*) "There are no options to print"
         else
             cur => list%next
             do while(associated(cur%next))
                 write(0,*) "Option Num: ", i
                 write(0,*) "Option name: ", cur%short_opt
+                write(0,*) "Option Long: ", cur%long_opt
                 write(0,*) "Arg Req: ", cur%argument 
                 write(0,*) ""
                 cur => cur%next
@@ -150,6 +151,7 @@ module getoptf
         else ! First item in the list
             list%next => opt 
             opt%next => list
+            opt%prev => opt
         endif
 
     end subroutine add_option
@@ -185,19 +187,17 @@ module getoptf
 
         if(DEBUG > 0) write(0,*) "getopt: optstring is:", optString
 
-        write(0,*) "Optstring length=", len(optString)
 
         do i = 1, len(optString), 1
-            ! Error
+
+            ! Errors
             if( optString(i:i) == '?' ) then
                 write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
-            
             ! Error
             elseif( optString(i:i) =='-' ) then
                 write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
-
             ! Error - If we encouter
             elseif ( len(optString) > 1) then
                 if ( optString(1:1) == ':' .AND. optString(2:2) == ':' ) then
@@ -206,26 +206,24 @@ module getoptf
                     write(0, *)
                     stop
                 endif
-            ! Surpress Error Messages
-            elseif( optString(1:1) == ':') then
-                ! pass
-            ! Valid option
-            else 
-                if(DEBUG > 1) then
-                    write(0,*) "DEBUG: We have a new option: ", optString(i:i)
-                endif
-
-                allocate(opt)
-
-                opt%short_opt = optString(i:i)
-
-                if( i == len(optString)) then 
-                    opt%argument = .FALSE.;
-                else if (optString(i+1:i+1) == ':') then 
-                        opt%argument = .TRUE.
-                endif
-                call add_option(opt, list)
             endif
+
+            ! Surpress Error Messages
+            if ( optString(1:1) == ':') then
+                ! pass
+            endif 
+
+            ! Valid option
+            allocate(opt)
+
+            opt%short_opt = optString(i:i)
+
+            if( i == len(optString)) then 
+                opt%argument = .FALSE.;
+            else if (optString(i+1:i+1) == ':') then 
+                    opt%argument = .TRUE.
+            endif
+            call add_option(opt, list)
         enddo
 
         parse_format = 0
@@ -266,6 +264,8 @@ module getoptf
 
         ! Local variables
         type(option), pointer :: arg
+        type(option), pointer :: cmd
+        type(option), pointer :: cmdlist
         integer :: i, j
         integer :: CMD_LENGTH
 
@@ -286,6 +286,7 @@ module getoptf
             write(0,*) ""
         endif
 
+        allocate(cmdlist)
          
         do while( i < len(argv)) ! For the whole length of argv
             if( argv(i:i) == DASH ) then
@@ -293,11 +294,23 @@ module getoptf
                 do while ( argv(j:j) /= SPACE .OR. j == len(argv) )
                     j = j + 1
                 enddo
+
+                ! Process this command 
                 write(0,*) "Argument/Option: ", argv(i:j)
+
+                allocate(cmd)
+                allocate(character(j - i + 1) :: cmd%long_opt)
+                
+                cmd%short_opt = 'z'
+                cmd%long_opt = argv(i:j)
+
+                call add_option(cmd, cmdlist)
             endif
+
             i = i + 1
         enddo
 
+        call print_list(cmdlist)
 
         parse_argv = .FALSE.
     end function parse_argv
