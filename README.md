@@ -110,6 +110,51 @@ the argument list) use the getoptf - `get_arg_count()` command.
 
 # Design
 
+## Optlist
+
+First, getopt will read through the format string and for each valid option, it
+will create and store a new option. This list of options will be reference for
+determining which options the user has requested that are valid or invalid.
+
+This first list of options is called the `optlist`.
+
+## Arglist
+
+The next list of options is the `arglist`. This is the list of arguments that
+were passed by the user, which can be retrieved by `get_command()`.
+
+Parse argv will parse the command line and will create a list of options
+(`arglist`). The reason for this is to better represent the c implementation of
+argv (ie an array of characters arrays). 
+
+With it, options and arguments can be explored easily. If an option is required
+for an option, we can use the `get_next()` function to get the next option in
+the arglist to determine if it is an argument or not.
+
+
+## Execution Description
+
+```
+optlist = parse_format(format_string)
+arglist = parse_argv(argv)
+
+for cmd in arglist:
+    if (cmd in optlist):            ! Valid Optoin
+        if (optlist.cmd.argument):  ! Option requires and argument
+            next = get_next(arglist.cmd)
+            if (next == argument):
+                optarg = argument
+            else
+                optarg = ?? ! print Missing argument
+
+        c = cmd % short  ! Return the valid option
+        return c
+    elif( cmd is an option (ie starts with a dash)):
+        return invalid option or option not recognized
+    else
+        Then we have a nonoption argument so do the 
+        correct thing with it (which I don't know what that is right now)
+```
 
 ## Resources
 * https://www.gnu.org/software/libc/manual/html_node/Getopt.html
