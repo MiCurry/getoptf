@@ -24,6 +24,7 @@ program test_options_simple
     ! debug variables 
     integer :: optcnt ! Will count our arguments
     integer :: numTests, numErrs, numSuc
+    integer :: cnt
     ! "Option: 1 was character: a expedted: a - Test - PASSED"
     character (len=300), parameter :: OPT_TST_FMT = "(A, I2, A, A, A, A, I2, A)"
 
@@ -51,69 +52,74 @@ program test_options_simple
     optcnt = 0 
     numErrs = 0
     numSuc = 0
+    cnt = 0
 do while(getopt(argc, argv, c, "abcdefgh")) 
+    write(0,*) "Get opt called c is: ", c
+
     select case (c)
     case ('a')
         if(assert_char(c, 'a')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
     case ('b')
         if(assert_char(c, 'b')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
     case ('c')
         if(assert_char(c, 'c')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
     case ('1')
         if(assert_char(c, '1')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
             numSuc = numSuc + 1
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
     case ('2')
         if(assert_char(c, '2')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
     case ('3')
         if(assert_char(c, '3')) then
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- PASSED"
         else
-            write(0, OPT_TST_FMT) "Option: ", optcnt, "was char: ", c, "expected: ", 'a', &
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
                                   &"- Test", optcnt, "- FAILED"
             numErrs = numErrs + 1
         end if
    end select
+   cnt = cnt + 1
 end do
 
+write(0, *) ""
 write(0, *) "Test finish"
 write(0, *) "Total tests: ", numSuc + numErrs
 write(0, *) "Number of Success: ", numSuc

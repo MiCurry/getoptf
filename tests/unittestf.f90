@@ -17,8 +17,6 @@ function assert_char(c, expected)
     else
         assert_char = .FALSE.
     end if
-    
-    return
 end function
 
 

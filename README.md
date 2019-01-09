@@ -1,10 +1,17 @@
 
 # Development Logs - Because I always forget what I was working on..
+
 * 12/11/18 - 4:21 pm - Added the arglist. Now each list is a generic list of
 the derived `type option`. Each list is now allocated in the main function
 (though it still needs to be fully implemented so do this next.). Also changed
 how the linked list is processed, no more counts! - Possibly might make things
 doubly linked, so we can cruise though the options in a specific order.
+
+* 01/02/19 - 12:19pm - Made it so it returns a character, but now, for some
+reason, there is a really strange error that is happening! And i'm not sure
+why!
+
+* 01/09/19 - Add arguments to their corresponding option
 
 
 # getoptf.f90 
