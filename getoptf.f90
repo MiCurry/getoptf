@@ -26,10 +26,9 @@ module getoptf
     ! type option - The option struct
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     type option 
-        character :: short_opt                      ! The speifiers for the option
-        character(len=:), allocatable :: long_opt   ! The long specifier for the optoin
-
+        character(len=:), allocatable :: cmd   ! This is the option 
         character(len=:), allocatable :: arg   ! The argument associated with this option
+
         logical :: argument                    ! If False == no options if True == options
         logical :: list = .FALSE.              ! Marks if this is a list or not
 
@@ -66,8 +65,7 @@ module getoptf
             cur => list%next
             do while(associated(cur%next))
                 write(0,*) "Option Num: ", i
-                write(0,*) "Option name: ", cur%short_opt
-                write(0,*) "Option Long: ", cur%long_opt
+                write(0,*) "Name : ", cur%cmd
                 write(0,*) "Argument: ", cur%argument 
                 write(0,*) ""
                 cur => cur%next
@@ -246,14 +244,13 @@ module getoptf
 
             ! Valid option
             allocate(opt)
-            opt%short_opt = optString(i:i)
-            allocate(character(len(opt%short_opt)) :: opt%long_opt)
-            allocate(character(len(opt%short_opt)) :: opt%arg)
-            opt%long_opt=opt%short_opt
-            opt%arg=opt%short_opt
 
-            if( i == len(optString)) then 
-                opt%argument = .FALSE.;
+            allocate(character(1) :: opt%cmd)
+
+            opt%cmd = optString(i:i)
+
+            if( i == len(optString)) then ! Check to see if there is a ':' 
+                opt%argument = .FALSE.;   ! after this option
             else if (optString(i+1:i+1) == ':') then 
                     opt%argument = .TRUE.
             endif
@@ -321,6 +318,7 @@ module getoptf
 
         allocate(cmdlist)
          
+
         do while( i < len(argv)) ! For the whole length of argv
             if( argv(i:i) /= SPACE ) then ! We have an argument
                 allocate(cmd)
@@ -343,17 +341,10 @@ module getoptf
                 endif
                 
                 ! Allocate it
-                allocate(character(j - i + 1) :: cmd%long_opt)
+                allocate(character(j - 1 + 1) :: cmd%cmd)
                 allocate(character(1) :: cmd%arg)
                 
-                ! And then save it it and add it too the list!
-                if ( argv(i:i) == DASH ) then
-                    cmd%short_opt = argv(i+1:j)
-                    cmd%long_opt = argv(i+1:j)
-                else
-                    cmd%short_opt = argv(i:j)
-                    cmd%long_opt = argv(i:j)
-                endif
+                cmd%cmd = argv(i:j)
 
                 cmd%arg='-'
 
@@ -448,7 +439,7 @@ module getoptf
 
              ! Get the first option of the list
              if(get_first(arglist, cur_opt)) then
-                 c = cur_opt%short_opt
+                 c = cur_opt%cmd(1:1)
                  write(0,*) "C : ", c
                  getopt = .TRUE.
                  return
@@ -460,7 +451,7 @@ module getoptf
         
         ! Get the next option of the list 
         if(get_prev(arglist, cur_opt, prev_opt)) then
-            c = cur_opt%short_opt
+            c = cur_opt%cmd(1:1)
             getopt = .TRUE.
         else
             getopt = .FALSE.
