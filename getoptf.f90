@@ -1,6 +1,6 @@
 module getoptf
 
-    private 
+    private
     public :: getopt
 
     ! External Variables
@@ -13,7 +13,7 @@ module getoptf
     character(len=256) :: optarg
 
     logical :: FIRST_CALL_FLAG = .TRUE. ! Set to false after first call
-    
+
     character, parameter :: SPACE = ' '
     character, parameter :: DASH = '-'
     character, parameter :: COLON = ':'
@@ -25,8 +25,8 @@ module getoptf
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! type option - The option struct
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    type option 
-        character(len=:), allocatable :: cmd   ! This is the option 
+    type option
+        character(len=:), allocatable :: cmd   ! This is the option
         character(len=:), allocatable :: arg   ! The argument associated with this option
 
         logical :: argument                    ! If False == no options if True == options
@@ -36,19 +36,15 @@ module getoptf
         type (option), pointer :: prev => null()
     end type option
 
-    type(option) :: cur_opt
-    type(option) :: next_opt
-    type(option) :: prev_opt
-
     contains
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Name: print_list()
-    ! Description: Prints a option type linked list
+    ! Description: Prints a type(option) linked list
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine print_list(list)
         implicit none
-        
+
         ! Input variables
         type(option), pointer, intent(in) :: list
 
@@ -64,22 +60,38 @@ module getoptf
         else
             cur => list%next
             do while(associated(cur%next))
+                if (associated(cur, list)) then
+                    write(0,*) "End of the list"
+                    write(0,*) ""
+                    exit ! We have returned to the list head - Exit
+                endif
+
                 write(0,*) "Option Num: ", i
+                write(0,*) "Option list: ", cur%list
                 write(0,*) "Name : ", cur%cmd
-                write(0,*) "Argument: ", cur%argument 
+                write(0,*) "Argument: ", cur%argument
                 write(0,*) ""
                 cur => cur%next
                 i = i + 1
 
-                if (associated(cur, list)) then
-                    exit ! We have returned to the list head - Exit
-                endif
+                !if (associated(cur, list)) then
             enddo
         endif
-
     end subroutine print_list
 
-    ! Get the first option that was added
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_first
+    !
+    ! Description: Get the first type(option) (i.e. option, non-option,
+    !              argument) in a list.
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first
+    !               type(option) found.
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Get the first command that was added
     function get_first(list, opt)
         implicit none
         ! Input variables
@@ -94,18 +106,70 @@ module getoptf
             opt = list%prev
         else
             get_first = .FALSE.
-        endif
+        endif !TODO: Make sure this is implented
     end function get_first
 
-    ! Get the last option that was allocated
-    function get_last(list, opt)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_first_option
+    !
+    ! Description: Get the first option in a list.
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first option
+    !               found
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_first_option(list, opt)
+        implicit none
+        ! Input variables
+        type(option), pointer, intent(in) :: list
+        type(option), pointer, intent(out) :: opt
+        ! Return value
+        logical :: get_first_option
+        type(option), pointer :: cur
+
+        get_first_option = .FALSE.
+        cur => list%prev
+        do while(associated(cur%prev))
+            if (allocated(cur%cmd)) then
+                if ( cur%cmd(1:1) == DASH ) then
+                    get_first_option = .TRUE.
+                    opt => cur
+                    return
+                else
+                    cur => cur%prev
+                endif
+           else
+                get_first_option = .FALSE. ! No more options in the list
+                cur => null()
+                return ! We have returned to the list head - Exit
+           endif
+        enddo
+    end function get_first_option
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_last
+    !
+    ! Description: Get the last option that was allocated to a list (ie the
+    !              end of argv)
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first option
+    !               found
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_last(list, opt) ! TODO: Make sure this is implemented
         implicit none
         ! Input variables
         type(option), pointer, intent(in) :: list
         type(option), intent(out) :: opt
         ! Return variable
         logical :: get_last
-        
+
         if(associated(list%next)) then
             get_last = .TRUE.
             opt = list%next
@@ -114,6 +178,18 @@ module getoptf
         endif
     end function get_last
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_next
+    !
+    ! Description: Get the next type(option) of a list
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - The current type(option) within the list
+    !         next - A pointer to a type(option) that will hold the next option
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     function get_next(list, opt, next)
         implicit none
         !Input Variables
@@ -132,16 +208,25 @@ module getoptf
         if(associated(opt%next) .AND. .NOT. opt%next%list) then
             get_next = .TRUE.
             next = opt%next
-        endif
+        endif ! TODO: Make sure this is implemented
+    end function get_next
 
-    end function get_next 
-
-    function get_prev(list, opt, prev)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_prev
+    !
+    ! Description: Get the previous type(option) of a list
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - The current type(option) within the list
+    !         next - A pointer to a type(option) that will hold the prev option
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_prev(opt) ! TODO: Make sure this is implemented
         implicit none
         !Input Variables
-        type(option), pointer :: list
         type(option), intent(inout) :: opt
-        type(option), intent(out) :: prev
         ! Return variables
         logical :: get_prev
 
@@ -152,16 +237,58 @@ module getoptf
             get_prev = .TRUE.
             opt = opt%prev
         endif
-
     end function get_prev
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_prev_option
+    !
+    ! Description: Get the prev option that was added to a list.
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first option
+    !               found
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_prev_option(opt)
+        implicit none
+        !Input Variables
+        type(option), pointer, intent(inout) :: opt
+        type(option), pointer :: cur
+        ! Return variables
+        logical :: get_prev_option
+
+       get_prev_option = .FALSE.
+       cur => opt
+
+       !write(0,*) "This option is: ", opt%cmd
+       !write(0,*) "Its prev is: ", opt%prev%cmd
+
+        do while(associated(cur%prev))
+            cur => cur%prev
+            if (allocated(cur%cmd)) then
+                if (cur%cmd(1:1) == DASH) then
+                    get_prev_option = .TRUE.
+                    opt => cur
+                    return
+                endif
+           else
+                get_prev_option = .FALSE. ! No more options in the list
+                opt => null()
+                return ! We have returned to the list head - Exit
+           endif
+        enddo
+    end function get_prev_option
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     ! Name: add_option
     !
-    ! Description: 
+    ! Description: Add an element to and option list
     !
-    ! Input: opt - an allocated and initialized option type
+    ! Input: list - The list to be added to
+    !        opt - an allocated and initialized option type
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     subroutine add_option(list, opt)
@@ -177,26 +304,25 @@ module getoptf
             list%next => opt
             opt%prev => list
         else ! First item in the list
-            list%next => opt 
+            list%next => opt
             list%prev => opt
             opt%next => list
             opt%prev => list
         endif
-
     end subroutine add_option
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! Name: parse_format 
+    ! Name: parse_format
     !
-    ! Description: Parse through the programmer specified format string and create an 
-    ! 'option' type above, allocate it and save it to the list. Continue 
+    ! Description: Parse through the programmer specified format string and create an
+    ! 'option' type above, allocate it and save it to the list. Continue
     ! for each specifier.
     !
     ! Input: optString -- The specified format of the string by the programmer
     !                     Example: "ab1:v:f1:f2"
-    !
-    ! Return value: 
+    !        list - The list hold the parsed optString
+    ! Return value:
     !
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -208,7 +334,7 @@ module getoptf
         type(option), pointer :: list
 
         ! Return value
-        integer :: parse_format 
+        integer :: parse_format
 
         ! Local variables
         type(option), pointer :: opt
@@ -216,18 +342,17 @@ module getoptf
 
         if(DEBUG > 0) write(0,*) "getopt: optstring is:", optString
 
-
         do i = 1, len(optString), 1
 
-            ! Errors
+            ! Error - '?' in format string
             if( optString(i:i) == '?' ) then
                 write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
-            ! Error
+            ! Error - '-' in format string
             elseif( optString(i:i) =='-' ) then
                 write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
                 stop
-            ! Error - If we encouter
+            ! Error - If we encouter two ':' in a row
             elseif ( len(optString) > 1) then
                 if ( optString(1:1) == ':' .AND. optString(2:2) == ':' ) then
                     write(0, *) "getoptf: Illegal option in optString: ", optString(i:i)
@@ -237,30 +362,28 @@ module getoptf
                 endif
             endif
 
-            ! Surpress Error Messages
+            ! If the start of the string is ':', then we must surpress output
             if ( optString(1:1) == ':') then
-                ! pass
-            endif 
+                ! pass - TODO: Surpress output
+            endif
 
-            ! Valid option
+            ! Anything else is a valid option
             allocate(opt)
-
             allocate(character(1) :: opt%cmd)
-
             opt%cmd = optString(i:i)
 
-            if( i == len(optString)) then ! Check to see if there is a ':' 
-                opt%argument = .FALSE.;   ! after this option
-            else if (optString(i+1:i+1) == ':') then 
+            ! Check to see if this option has a ':' after it
+            if( i == len(optString)) then
+                opt%argument = .FALSE.
+            else if (optString(i+1:i+1) == ':') then
                     opt%argument = .TRUE.
             endif
             call add_option(list, opt)
         enddo
 
-        parse_format = 0
+        parse_format = 0 ! TODO: Check to see if we need this return value
     end function parse_format
 
-    
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     ! Name: parse_argv
@@ -270,23 +393,21 @@ module getoptf
     ! through options that we haven't parsed through yet.
     !
     ! Input: commands - The list of options specfieid by the user/call
+    !            list - The list to hold the parsed argv
     !
-    ! Return:
+    ! Return: TODO: Does this need a return?
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! Development Notes:
-    !
-    ! 1. Determine errors that can be caused when parsing options
-    ! 2. Invalid Characters
+    ! Invalid Characters
     !   * `-:`  -- './a.out invalid option -- '-'
     !   * `-?`  -- './a.out No Match.'
-    !   * `---` -- Prints out the following twice: './a.out invalid option -- '-''
+    !   * `--` -- 'Two dashes in a row'
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     function parse_argv(argv, list)
         implicit none
 
-        ! Input variables 
+        ! Input variables
         character(len=*), intent(in) :: argv
         type(option), pointer :: list
 
@@ -294,14 +415,12 @@ module getoptf
         logical :: parse_argv
 
         ! Local variables
-        type(option), pointer :: arg
         type(option), pointer :: cmd
         type(option), pointer :: cmdlist
         integer :: i, j
         integer :: CMD_LENGTH
 
-        ! Zip through argv, and gather all the arguments
-        
+
         ! Deterime the program name - so we can save it and skip over it
         do i = 1, len(argv)
             if(argv(i:i) == SPACE) then
@@ -317,16 +436,19 @@ module getoptf
         endif
 
         allocate(cmdlist)
-         
 
-        do while( i < len(argv)) ! For the whole length of argv
+        !! Zip through argv, and gather all the options, arguments and non-options
+
+        do while( i < len(argv))
+            ! If we don't have a space, then we have an option, non-option or
+            ! an argument. Determine its type, and add it to the list
             if( argv(i:i) /= SPACE ) then ! We have an argument
                 allocate(cmd)
 
                 j = i
 
                 if( argv(j:j) == DASH) then
-                    cmd%argument = .FALSE. ! This is not an argument    
+                    cmd%argument = .FALSE. ! This is not an argument
                 else
                     cmd%argument = .TRUE. ! This is an argument
                 endif
@@ -339,13 +461,12 @@ module getoptf
                 if(DEBUG > 1) then
                     write(0,*) "Option: ", argv(i:j)
                 endif
-                
-                ! Allocate it
-                allocate(character(j - 1 + 1) :: cmd%cmd)
-                allocate(character(1) :: cmd%arg)
-                
-                cmd%cmd = argv(i:j)
 
+                ! Allocate it and add it to the list of command list
+                allocate(character(j) :: cmd%cmd)
+                allocate(character(1) :: cmd%arg)
+
+                cmd%cmd = argv(i:j)
                 cmd%arg='-'
 
                 call add_option(cmdlist, cmd)
@@ -355,8 +476,6 @@ module getoptf
             i = i + 1
         enddo
 
-        write(0,*)""
-
         if (DEBUG > 2) then
             call print_list(cmdlist)
         endif
@@ -365,9 +484,8 @@ module getoptf
         parse_argv = .FALSE.
     end function parse_argv
 
-
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! Name: getoptf 
+    ! Name: getoptf
     !
     ! Example call to get opt: do while ( getopt(argc, argv, c, " ") /= -1 )
     !
@@ -384,7 +502,7 @@ module getoptf
     function getopt(argc, argv, c, format)
 
         implicit none
-    
+
         ! Input arguments
         integer, intent(in)             :: argc      ! The argument count
         character(len=*), intent(in)    :: argv      ! The list of Arguments
@@ -393,70 +511,82 @@ module getoptf
 
         ! Return value - getoptf -1 when all options are proccessed otherwise - 1
         logical :: getopt
-        
+
         ! Local variables
+        type(option), pointer :: cur_opt => null()
+        ! type(option), pointer :: next_opt => null()
+        ! type(option), pointer :: prev_opt => null()
+
         type(option), pointer :: optlist
         type(option), pointer :: arglist
-        type(option) :: opt
         integer :: ierr
-
-        allocate(optlist)
-        allocate(arglist)
-
-        optlist%list = .TRUE.
-        arglist%list = .TRUE.
 
         c = '?'
 
         getopt = .FALSE.
 
         if(first_call_flag) then
+            allocate(optlist)
+            allocate(arglist)
+
+            allocate(cur_opt)
+
+            optlist%list = .TRUE.
+            arglist%list = .TRUE.
+
              if(DEBUG>0) then
                 write(0,*) "We ran the first call flag!"
              endif
+
              ierr = parse_format(format, optlist)
-             if (ierr == -1) then 
+             if (ierr == -1) then
                  !report error
              end if
+
              if(DEBUG>0) then
+                 write(0,*) " Going to print the optlist "
                  call print_list(optlist)
              endif
+
             if(argc /= 0) then
                 write(0,*) "Now going to parse options"
                 getopt = parse_argv(argv, arglist)
 
                 if(DEBUG>0) then
+                    write(0,*) " Going to print the arglist"
                     call print_list(arglist)
                 endif
             else
-                getopt = .FALSE.
                 if(DEBUG>0) then
                     write(0,*) "No commandline options or arguments were passed in - so we are returning"
                 endif
+
+                getopt = .FALSE.
                 return
              endif
+
+             ! After the first time through, we no longer need to process the
+             ! argument lists, so set this flag to .FALSE.
              first_call_flag = .FALSE.
 
              ! Get the first option of the list
-             if(get_first(arglist, cur_opt)) then
-                 c = cur_opt%cmd(1:1)
-                 write(0,*) "C : ", c
+             if(get_first_option(arglist, cur_opt)) then
+                 c = cur_opt%cmd(2:2)
                  getopt = .TRUE.
-                 return
              endif
+
+             return ! The first character or nothing
         endif
 
-        write(0,*) "arglist: ", arglist%list
-        stop
-        
-        ! Get the next option of the list 
-        if(get_prev(arglist, cur_opt, prev_opt)) then
-            c = cur_opt%cmd(1:1)
-            getopt = .TRUE.
+        ! Now loop backwards through the the command (backwards, because the list
+        ! in the order the options is in reverse order)
+        if(get_prev_option(cur_opt)) then
+            c = cur_opt%cmd(2:2)
+            getopt=.TRUE.
+            return
         else
             getopt = .FALSE.
         endif
-
     end function getopt
 
 end module getoptf
