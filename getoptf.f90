@@ -39,6 +39,49 @@ module getoptf
     contains
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: add_option
+    !
+    ! Description: Add an element to and option list
+    !
+    ! Input: list - The list to be added to
+    !        opt - an allocated and initialized option type
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    subroutine add_option(list, opt)
+        implicit none
+
+        ! Input variables
+        type(option), pointer :: opt
+        type(option), pointer :: list
+
+        ! Insert into list reverse order
+        if(associated(list % prev) then
+           list % prev % next => opt
+            opt % prev => list % prev
+            list % prev => opt
+            opt % prev => list
+        else ! First item in the list
+            list % next => opt
+            list % prev => opt
+            opt % next => list
+            opt % prev => list
+        endif
+
+       ! if (associated(list%next)) then
+       !     list%next%prev => opt
+       !     opt%next => list%next
+       !     list%next => opt
+       !     opt%prev => list
+       ! else ! First item in the list
+       !     list%next => opt
+       !     list%prev => opt
+       !     opt%next => list
+       !     opt%prev => list
+       ! endif
+    end subroutine add_option
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Name: print_list()
     ! Description: Prints a type(option) linked list
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -78,105 +121,6 @@ module getoptf
             enddo
         endif
     end subroutine print_list
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! Name: get_first
-    !
-    ! Description: Get the first type(option) (i.e. option, non-option,
-    !              argument) in a list.
-    !
-    ! Input: list - An allocate list of type(option) that contains, options,
-    !               commands or arguments
-    !         opt - A pointer to a type(option) that will hold the first
-    !               type(option) found.
-    !
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Get the first command that was added
-    function get_first(list, opt)
-        implicit none
-        ! Input variables
-        type(option), pointer, intent(in) :: list
-        type(option), intent(out) :: opt
-        ! Return value
-        logical :: get_first
-        ! Local variables
-
-        if(associated(list%prev)) then
-            get_first = .TRUE.
-            opt = list%prev
-        else
-            get_first = .FALSE.
-        endif !TODO: Make sure this is implented
-    end function get_first
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! Name: get_first_option
-    !
-    ! Description: Get the first option in a list.
-    !
-    ! Input: list - An allocate list of type(option) that contains, options,
-    !               commands or arguments
-    !         opt - A pointer to a type(option) that will hold the first option
-    !               found
-    !
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function get_first_option(list, opt)
-        implicit none
-        ! Input variables
-        type(option), pointer, intent(in) :: list
-        type(option), pointer, intent(out) :: opt
-        ! Return value
-        logical :: get_first_option
-        type(option), pointer :: cur
-
-        get_first_option = .FALSE.
-        cur => list%prev
-        do while(associated(cur%prev))
-            if (allocated(cur%cmd)) then
-                if ( cur%cmd(1:1) == DASH ) then
-                    get_first_option = .TRUE.
-                    opt => cur
-                    return
-                else
-                    cur => cur%prev
-                endif
-           else
-                get_first_option = .FALSE. ! No more options in the list
-                cur => null()
-                return ! We have returned to the list head - Exit
-           endif
-        enddo
-    end function get_first_option
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !
-    ! Name: get_last
-    !
-    ! Description: Get the last option that was allocated to a list (ie the
-    !              end of argv)
-    !
-    ! Input: list - An allocate list of type(option) that contains, options,
-    !               commands or arguments
-    !         opt - A pointer to a type(option) that will hold the first option
-    !               found
-    !
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function get_last(list, opt) ! TODO: Make sure this is implemented
-        implicit none
-        ! Input variables
-        type(option), pointer, intent(in) :: list
-        type(option), intent(out) :: opt
-        ! Return variable
-        logical :: get_last
-
-        if(associated(list%next)) then
-            get_last = .TRUE.
-            opt = list%next
-        else
-            get_last = .FALSE.
-        endif
-    end function get_last
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -281,35 +225,126 @@ module getoptf
         enddo
     end function get_prev_option
 
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! Name: add_option
+    ! Name: get_first
     !
-    ! Description: Add an element to and option list
+    ! Description: Get the first type(option) (i.e. option, non-option,
+    !              argument) in a list.
     !
-    ! Input: list - The list to be added to
-    !        opt - an allocated and initialized option type
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first
+    !               type(option) found.
     !
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    subroutine add_option(list, opt)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Get the first command that was added
+    function get_first(list, opt)
         implicit none
-
         ! Input variables
-        type(option), pointer :: opt
-        type(option), pointer :: list
+        type(option), pointer, intent(in) :: list
+        type(option), intent(out) :: opt
+        ! Return value
+        logical :: get_first
+        ! Local variables
 
-        if (associated(list%next)) then
-            list%next%prev => opt
-            opt%next => list%next
-            list%next => opt
-            opt%prev => list
-        else ! First item in the list
-            list%next => opt
-            list%prev => opt
-            opt%next => list
-            opt%prev => list
+        if(associated(list%prev)) then
+            get_first = .TRUE.
+            opt = list%prev
+        else
+            get_first = .FALSE.
+        endif !TODO: Make sure this is implented
+    end function get_first
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_first_option
+    !
+    ! Description: Get the first option in a list.
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first option
+    !               found
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_first_option(list, opt)
+        implicit none
+        ! Input variables
+        type(option), pointer, intent(in) :: list
+        type(option), pointer, intent(out) :: opt
+        ! Return value
+        logical :: get_first_option
+        type(option), pointer :: cur
+
+        get_first_option = .FALSE.
+        cur => list%prev
+        do while(associated(cur%prev))
+            if (allocated(cur%cmd)) then
+                if ( cur%cmd(1:1) == DASH ) then
+                    get_first_option = .TRUE.
+                    opt => cur
+                    return
+                else
+                    cur => cur%prev
+                endif
+           else
+                get_first_option = .FALSE. ! No more options in the list
+                cur => null()
+                return ! We have returned to the list head - Exit
+           endif
+        enddo
+    end function get_first_option
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !
+    ! Name: get_last
+    !
+    ! Description: Get the last option that was allocated to a list (ie the
+    !              end of argv)
+    !
+    ! Input: list - An allocate list of type(option) that contains, options,
+    !               commands or arguments
+    !         opt - A pointer to a type(option) that will hold the first option
+    !               found
+    !
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    function get_last(list, opt) ! TODO: Make sure this is implemented
+        implicit none
+        ! Input variables
+        type(option), pointer, intent(in) :: list
+        type(option), intent(out) :: opt
+        ! Return variable
+        logical :: get_last
+
+        if(associated(list%next)) then
+            get_last = .TRUE.
+            opt = list%next
+        else
+            get_last = .FALSE.
         endif
-    end subroutine add_option
+    end function get_last
+
+    function search_list(list, opt, ret)
+      
+      implicit none
+      ! Input variables
+      type(option), pointer, intent(in) :: list
+      type(option), intent(in) :: opt
+      type(option), intent(out) :: ret
+      ! Return value
+      logical :: search_list
+
+      do while(get_prev_option(opt)) 
+      !do while(get_next(list, opt, ret)) 
+         if ( ret % cmd == opt % cmd ) then
+            return
+         endif
+      enddo
+
+    end function search_list
+    
+
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -514,11 +549,13 @@ module getoptf
 
         ! Local variables
         type(option), pointer :: cur_opt => null()
+        type(option), pointer :: temp => null()
         ! type(option), pointer :: next_opt => null()
         ! type(option), pointer :: prev_opt => null()
 
-        type(option), pointer :: optlist
-        type(option), pointer :: arglist
+        type(option), pointer :: optlist => null()
+        type(option), pointer :: arglist => null()
+        type(option), pointer :: arg => null()
         integer :: ierr
 
         c = '?'
@@ -581,8 +618,12 @@ module getoptf
         ! Now loop backwards through the the command (backwards, because the list
         ! in the order the options is in reverse order)
         if(get_prev_option(cur_opt)) then
-            c = cur_opt%cmd(2:2)
-            getopt=.TRUE.
+            ! Check to see if we have an argument, and grab it if we do
+            ! Take the option that we have and search though the list of options that we've specified.
+            if (search_list(optlist, cur_opt, temp))
+               c = temp % cmd(2:2)
+               getopt=.TRUE.
+            
             return
         else
             getopt = .FALSE.
