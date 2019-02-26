@@ -8,13 +8,13 @@ else
 	LINK= -I ../
 endif
 
-tests: test_options
+tests: test_options test_arguments
 
 test_options: unittestf test_options.f90 ../getoptf.o unittestf.o
 	$(FC) $(FFLAGS) $(LINK) -o ../test_options test_options.f90 unittestf.o ../getoptf.o
 
 test_arguments: unittestf test_arguments.f90 ../getoptf.o unittestf.o
-	$(FC) $(FFLAGS) $(LINK) ../test_arguments.f90 -o test_arguments unittestf.o ../getoptf.o
+	$(FC) $(FFLAGS) $(LINK) -o ../test_arguments test_arguments.f90 unittestf.o ../getoptf.o
 
 run: test_options
 	./test_options 
