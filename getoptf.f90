@@ -175,6 +175,39 @@ module getoptf
         endif
     end function get_prev
 
+    ! Gets the prev option that was added to a list by looking for
+    ! the dash at the start of cmd
+    function get_prev_option(opt)
+        implicit none
+        !Input Variables
+        type(option), pointer, intent(inout) :: opt
+        type(option), pointer :: cur
+        ! Return variables
+        logical :: get_prev_option
+
+        get_prev_option = .FALSE.
+        cur => opt
+
+        !write(0,*) "This option is: ", opt%cmd
+        !write(0,*) "Its prev is: ", opt%prev%cmd
+
+        do while(associated(cur%prev))
+            cur => cur%prev
+            if (allocated(cur%cmd)) then
+                if (cur%cmd(1:1) == DASH) then
+                    get_prev_option = .TRUE.
+                    opt => cur
+                    return
+                endif
+           else
+                get_prev_option = .FALSE. ! No more options in the list
+                opt => null()
+                return ! We have returned to the list head - Exit
+           endif
+        enddo
+
+    end function get_prev_option
+
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
     ! Name: get_next_option
@@ -659,7 +692,6 @@ module getoptf
                   endif
                endif
             endif
-
             return
         else
             getopt = .FALSE.
