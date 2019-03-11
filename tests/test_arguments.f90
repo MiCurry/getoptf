@@ -53,7 +53,7 @@ program test_options_simple
     numErrs = 0
     numSuc = 0
     cnt = 0
-do while(getopt(argc, argv, c, "a:")) 
+do while(getopt(argc, argv, c, "a:b:cd")) 
     write(0,*) "Get opt called c is: ", c
 
     select case (c)
@@ -69,7 +69,18 @@ do while(getopt(argc, argv, c, "a:"))
         end if
 
         write(0,*) "The argument:", optarg
+    case ('b')
+        if(assert_char(c, 'b')) then
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
+                                  &"- Test", optcnt, "- PASSED"
+            numSuc = numSuc + 1
+        else
+            write(0, *) "Option: ", optcnt, "was char: ", c, " expected: ", 'a', &
+                                  &"- Test", optcnt, "- FAILED"
+            numErrs = numErrs + 1
+        end if
 
+        write(0,*) "The argument:", optarg
    end select
    cnt = cnt + 1
 end do

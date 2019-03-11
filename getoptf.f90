@@ -55,30 +55,17 @@ module getoptf
         type(option), pointer :: opt
         type(option), pointer :: list
 
-        ! Insert into list reverse order
-        if(associated(list % prev) then
-           list % prev % next => opt
-            opt % prev => list % prev
-            list % prev => opt
-            opt % prev => list
+        if (associated(list%prev)) then
+            list%prev%next => opt
+            opt%prev => list%prev
+            list%prev => opt
+            opt%next => list
         else ! First item in the list
-            list % next => opt
-            list % prev => opt
-            opt % next => list
-            opt % prev => list
+            list%prev => opt
+            list%next => opt
+            opt%prev => list
+            opt%next => list
         endif
-
-       ! if (associated(list%next)) then
-       !     list%next%prev => opt
-       !     opt%next => list%next
-       !     list%next => opt
-       !     opt%prev => list
-       ! else ! First item in the list
-       !     list%next => opt
-       !     list%prev => opt
-       !     opt%next => list
-       !     opt%prev => list
-       ! endif
     end subroutine add_option
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -145,7 +132,7 @@ module getoptf
 
         get_next = .FALSE.
 
-        if (associated(opt%prev, list)) then
+        if (associated(opt%next, list)) then
             return ! We have returned to the list head - Exit
         endif
 
@@ -167,63 +154,72 @@ module getoptf
     !         next - A pointer to a type(option) that will hold the prev option
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function get_prev(opt) ! TODO: Make sure this is implemented
+    function get_prev(list, opt, prev) ! TODO: Make sure this is implemented
         implicit none
         !Input Variables
-        type(option), intent(inout) :: opt
+        type(option), pointer, intent(in) :: list
+        type(option), intent(in) :: opt
+        type(option), intent(out) :: prev
         ! Return variables
         logical :: get_prev
 
-        write(0,*) "Opt prev", opt%prev%list
+        if (associated(opt%prev, list)) then
+            get_prev = .FALSE.
+            return ! We have returned to the list head - Exit
+        endif
 
         get_prev = .FALSE.
         if(associated(opt%prev) .AND. .NOT. opt%prev%list) then ! opt%long_opt /= list%long_opt) then
             get_prev = .TRUE.
-            opt = opt%prev
+            prev = opt%prev
         endif
     end function get_prev
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
-    ! Name: get_prev_option
+    ! Name: get_next_option
     !
-    ! Description: Get the prev option that was added to a list.
+    ! Description: Get the next option in a list
     !
     ! Input: list - An allocate list of type(option) that contains, options,
     !               commands or arguments
-    !         opt - A pointer to a type(option) that will hold the first option
-    !               found
+    !         cur - ???
+    !         ret - The next option to be returned - ???
     !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function get_prev_option(opt)
+    function get_next_option(list, opt)
         implicit none
         !Input Variables
+        type(option), pointer, intent(in) :: list
         type(option), pointer, intent(inout) :: opt
-        type(option), pointer :: cur
         ! Return variables
-        logical :: get_prev_option
+        logical :: get_next_option
 
-       get_prev_option = .FALSE.
-       cur => opt
+        type(option), pointer :: cur
 
-       !write(0,*) "This option is: ", opt%cmd
-       !write(0,*) "Its prev is: ", opt%prev%cmd
+        get_next_option = .FALSE.
+        cur => opt
 
-        do while(associated(cur%prev))
-            cur => cur%prev
+        !write(0,*) "This option is: ", opt%cmd
+        !write(0,*) "Its prev is: ", opt%prev%cmd
+
+        do while(associated(cur%next))
+            cur => cur%next
             if (allocated(cur%cmd)) then
                 if (cur%cmd(1:1) == DASH) then
-                    get_prev_option = .TRUE.
+                    get_next_option = .TRUE.
                     opt => cur
                     return
                 endif
            else
-                get_prev_option = .FALSE. ! No more options in the list
+                get_next_option = .FALSE. ! No more options in the list
                 opt => null()
                 return ! We have returned to the list head - Exit
            endif
         enddo
-    end function get_prev_option
+
+        opt => null()
+    end function get_next_option
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -248,9 +244,9 @@ module getoptf
         logical :: get_first
         ! Local variables
 
-        if(associated(list%prev)) then
+        if(associated(list%next)) then
             get_first = .TRUE.
-            opt = list%prev
+            opt = list%next
         else
             get_first = .FALSE.
         endif !TODO: Make sure this is implented
@@ -278,15 +274,15 @@ module getoptf
         type(option), pointer :: cur
 
         get_first_option = .FALSE.
-        cur => list%prev
-        do while(associated(cur%prev))
+        cur => list%next
+        do while(associated(cur%next))
             if (allocated(cur%cmd)) then
                 if ( cur%cmd(1:1) == DASH ) then
                     get_first_option = .TRUE.
                     opt => cur
                     return
                 else
-                    cur => cur%prev
+                    cur => cur%next
                 endif
            else
                 get_first_option = .FALSE. ! No more options in the list
@@ -317,34 +313,42 @@ module getoptf
         ! Return variable
         logical :: get_last
 
-        if(associated(list%next)) then
+        if(associated(list%prev)) then
             get_last = .TRUE.
-            opt = list%next
+            opt = list%prev
         else
             get_last = .FALSE.
         endif
     end function get_last
 
-    function search_list(list, opt, ret)
-      
-      implicit none
-      ! Input variables
-      type(option), pointer, intent(in) :: list
-      type(option), intent(in) :: opt
-      type(option), intent(out) :: ret
-      ! Return value
-      logical :: search_list
+    ! Search a list for an option
+    function search(list, query, opt)
+       implicit none
+       ! Input variables
+       type(option), pointer, intent(in) :: list
+       type(option), intent(in) :: query
+       type(option), intent(out) :: opt
+       ! Return variable
+       logical :: search
+       ! Local variables
+       type(option) :: next 
 
-      do while(get_prev_option(opt)) 
-      !do while(get_next(list, opt, ret)) 
-         if ( ret % cmd == opt % cmd ) then
-            return
+       next = list
+
+       search = .FALSE.
+       do while(get_next(list, next, opt))
+         if (allocated(opt % cmd) .AND. allocated(query % cmd)) then
+            if ( len(query % cmd) >= 2 .AND. query % cmd(1:1) == '-') then
+               if (opt % cmd == query % cmd(2:2)) then
+                  search = .TRUE.
+                  return
+               endif
+            endif
          endif
-      enddo
+         next = opt
+       enddo
 
-    end function search_list
-    
-
+    end function search
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !
@@ -402,16 +406,21 @@ module getoptf
                 ! pass - TODO: Surpress output
             endif
 
+            if ( optString(i:i) == ':') then
+               cycle
+            endif
+
             ! Anything else is a valid option
             allocate(opt)
-            allocate(character(1) :: opt%cmd)
-            opt%cmd = optString(i:i)
+            allocate(character(1) :: opt % cmd)
+            opt % cmd = optString(i:i)
+            opt % argument = .FALSE.
 
             ! Check to see if this option has a ':' after it
             if( i == len(optString)) then
-                opt%argument = .FALSE.
+                opt % argument = .FALSE.
             else if (optString(i+1:i+1) == ':') then
-                    opt%argument = .TRUE.
+                opt % argument = .TRUE.
             endif
             call add_option(list, opt)
         enddo
@@ -467,6 +476,7 @@ module getoptf
         if(DEBUG>0) then
             write(0,*) "The length of the command was: ", i
             write(0,*) "And the command was: ", argv(1:i)
+            write(0,*) "Argv is: ", argv
             write(0,*) ""
         endif
 
@@ -549,7 +559,7 @@ module getoptf
 
         ! Local variables
         type(option), pointer :: cur_opt => null()
-        type(option), pointer :: temp => null()
+        type(option) :: temp
         ! type(option), pointer :: next_opt => null()
         ! type(option), pointer :: prev_opt => null()
 
@@ -602,28 +612,54 @@ module getoptf
                 return
              endif
 
-             ! After the first time through, we no longer need to process the
-             ! argument lists, so set this flag to .FALSE.
-             first_call_flag = .FALSE.
+        endif
 
+
+        ! For the first option
+        if ( first_call_flag ) then
              ! Get the first option of the list
              if(get_first_option(arglist, cur_opt)) then
                  c = cur_opt%cmd(2:2)
                  getopt = .TRUE.
              endif
 
-             return ! The first character or nothing
+            ! See if we should try to grab an argument
+            if (search(optlist, cur_opt, temp)) then
+               if ( temp % argument .EQV. .TRUE. ) then ! We need to return an argument
+                  if ( get_next(arglist, cur_opt, temp) ) then
+                     optarg = temp % cmd
+                  else
+                     optarg = '??'
+                  endif
+               endif
+            else
+            endif
+            ! After the first time through, we no longer need to process the
+            ! argument lists, so set this flag to .FALSE.
+            write(0,*) optarg
+            first_call_flag = .FALSE.
+            return
         endif
 
-        ! Now loop backwards through the the command (backwards, because the list
-        ! in the order the options is in reverse order)
-        if(get_prev_option(cur_opt)) then
-            ! Check to see if we have an argument, and grab it if we do
-            ! Take the option that we have and search though the list of options that we've specified.
-            if (search_list(optlist, cur_opt, temp))
-               c = temp % cmd(2:2)
-               getopt=.TRUE.
-            
+
+        ! For any call after the first option
+
+        ! Now loop backwards through the the commands in argv 
+        if(get_next_option(arglist, cur_opt)) then
+            c = cur_opt % cmd(2:2)
+            getopt=.TRUE.
+
+            ! See if we should try to grab an argument
+            if (search(optlist, cur_opt, temp)) then
+               if ( temp % argument .EQV. .TRUE. ) then ! We need to return an argument
+                  if ( get_next(arglist, cur_opt, temp) ) then
+                     optarg = temp % cmd
+                  else
+                     optarg = '??'
+                  endif
+               endif
+            endif
+
             return
         else
             getopt = .FALSE.
